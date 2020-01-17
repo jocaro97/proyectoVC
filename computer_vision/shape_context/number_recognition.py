@@ -52,10 +52,8 @@ def match(base, current):
     """
       Here we are using cosine diff instead of "by paper" diff, cause it's faster
     """
-    ### cambiar esto???
-    '''res = cdist(base, current.reshape((1, current.shape[0])), metric="cosine")
-    char = str(np.argmin(res.reshape(11)))'''
-    char = '10'
+    res = cdist(base, current.reshape((1, current.shape[0])), metric="cosine")
+    char = str(np.argmin(res.reshape(11)))
     if char == '10':
         char = "/"
     return char

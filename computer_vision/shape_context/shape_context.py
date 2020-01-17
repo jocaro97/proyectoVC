@@ -29,6 +29,7 @@ class ShapeContext(object):
         indexes = zip(row_ind.tolist(), col_ind.tolist())
         return total, indexes
 
+    '''
     def get_points_from_img(self, image, simpleto=100):
         """
             This is much faster version of getting shape points algo.
@@ -47,9 +48,9 @@ class ShapeContext(object):
         points = [points[i] for i in range(len(points), step)][:simpleto]
         if len(points) < simpleto:
             points = points + [[0, 0]] * (simpleto - len(points))
-        return points
+        return points'''
 
-    '''def get_points_from_img(self, image, threshold=50, simpleto=100, radius=2):
+    def get_points_from_img(self, image, threshold=50, simpleto=100, radius=2):
         """
             That is not very good algorithm of choosing path points, but it will work for our case.
 
@@ -87,7 +88,7 @@ class ShapeContext(object):
             radians = math.atan2(py[y, x], px[y, x])
             T[i] = radians + 2 * math.pi * (radians < 0)
 
-        return points, np.asmatrix(T)'''
+        return points, np.asmatrix(T)
 
     def _cost(self, hi, hj):
         cost = 0
@@ -118,8 +119,7 @@ class ShapeContext(object):
 
         # getting euclidian distance
         r_array = cdist(points, points)
-        ##### AQUI ESTA EL PROBLEMA
-        print(r_array)
+
         # getting two points with maximum distance to norm angle by them
         # this is needed for rotation invariant feature
         am = r_array.argmax()
