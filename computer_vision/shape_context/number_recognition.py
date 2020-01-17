@@ -42,7 +42,8 @@ def parse_nums(sc, path):
     for i, r in enumerate(nums):
         if img[r[1]:r[3], r[0]:r[2]].mean() < 50:
             continue
-        points = sc.get_points_from_img(img[r[1]:r[3], r[0]:r[2]], 15)
+        points, aux = sc.get_points_from_img(img[r[1]:r[3], r[0]:r[2]], 15)
+
         descriptor = sc.compute(points).flatten()
         descs.append(descriptor)
     return np.array(descs)
@@ -51,8 +52,10 @@ def match(base, current):
     """
       Here we are using cosine diff instead of "by paper" diff, cause it's faster
     """
-    res = cdist(base, current.reshape((1, current.shape[0])), metric="cosine")
-    char = str(np.argmin(res.reshape(11)))
+    ### cambiar esto???
+    '''res = cdist(base, current.reshape((1, current.shape[0])), metric="cosine")
+    char = str(np.argmin(res.reshape(11)))'''
+    char = '10'
     if char == '10':
         char = "/"
     return char
