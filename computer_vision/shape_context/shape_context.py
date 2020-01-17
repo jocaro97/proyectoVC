@@ -125,11 +125,8 @@ class ShapeContext(object):
         am = r_array.argmax()
         max_points = [am / t_points, am % t_points]
         # normalizing
-        ##### ESTO HAY QUE CAMBIARLO
-        if(r_array.mean() != 0):
-            r_array_n = r_array / r_array.mean()
-        else:
-            r_array_n = r_array / 0.0000000000000000001
+        r_array_n = r_array / r_array.mean()
+
         # create log space
         r_bin_edges = np.logspace(np.log10(self.r_inner), np.log10(self.r_outer), self.nbins_r)
         r_array_q = np.zeros((t_points, t_points), dtype=int)
