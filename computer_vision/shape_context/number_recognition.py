@@ -57,12 +57,12 @@ def match(base, current):
     return char
 
 base_0123456789 = parse_nums(sc, '../resources/sc/numbers.png')
-recognize = parse_nums(sc, '../resources/sc/numbers_test3.png')
+recognize = parse_nums(sc, '../resources/sc/numero2.png')
 res = ""
 for r in recognize:
     res += match(base_0123456789, r)
 
-img = cv2.imread('../resources/sc/numbers_test3.png')
+img = cv2.imread('../resources/sc/numero2.png')
 plt.imshow(img)
 plt.show()
 print res
