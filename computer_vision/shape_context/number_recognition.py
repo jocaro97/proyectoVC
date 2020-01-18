@@ -31,7 +31,6 @@ def parse_nums(sc, path):
     # getting our numbers one by one
     rois = get_contour_bounding_rectangles(img)
     grayd = cv2.cvtColor(img.copy(), cv2.COLOR_GRAY2BGR)
-
     nums = []
     for r in rois:
         grayd = cv2.rectangle(grayd, (r[0], r[1]), (r[2], r[3]), (0, 255, 0), 1)
@@ -42,8 +41,7 @@ def parse_nums(sc, path):
     for i, r in enumerate(nums):
         if img[r[1]:r[3], r[0]:r[2]].mean() < 50:
             continue
-        points, aux = sc.get_points_from_img(img[r[1]:r[3], r[0]:r[2]], 15)
-
+        points, _ = sc.get_points_from_img(img[r[1]:r[3], r[0]:r[2]], 50, 15)
         descriptor = sc.compute(points).flatten()
         descs.append(descriptor)
     return np.array(descs)
@@ -63,7 +61,8 @@ recognize = parse_nums(sc, '../resources/sc/numbers_test3.png')
 res = ""
 for r in recognize:
     res += match(base_0123456789, r)
+
 img = cv2.imread('../resources/sc/numbers_test3.png')
 plt.imshow(img)
 plt.show()
-print(res)
+print res
