@@ -50,6 +50,7 @@ def match(base, current):
     """
       Here we are using cosine diff instead of "by paper" diff, cause it's faster
     """
+
     res = cdist(base, current.reshape((1, current.shape[0])), metric="cosine")
     char = str(np.argmin(res.reshape(11)))
     if char == '10':
@@ -57,12 +58,12 @@ def match(base, current):
     return char
 
 base_0123456789 = parse_nums(sc, '../resources/sc/numbers.png')
-recognize = parse_nums(sc, '../resources/sc/numero2.png')
+recognize = parse_nums(sc, '../resources/sc/numbers_test3.png')
 res = ""
 for r in recognize:
     res += match(base_0123456789, r)
 
-img = cv2.imread('../resources/sc/numero2.png')
+img = cv2.imread('../resources/sc/numbers_test3.png')
 plt.imshow(img)
 plt.show()
 print res

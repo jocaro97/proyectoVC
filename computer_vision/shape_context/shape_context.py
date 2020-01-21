@@ -118,7 +118,7 @@ class ShapeContext(object):
         theta_array = cdist(points, points, lambda u, v: math.atan2((v[1] - u[1]), (v[0] - u[0])))
         norm_angle = theta_array[max_points[0], max_points[1]]
         # making angles matrix rotation invariant
-        theta_array = (theta_array - norm_angle * (np.ones((t_points, t_points)) - np.identity(t_points)))
+        # theta_array = (theta_array - norm_angle * (np.ones((t_points, t_points)) - np.identity(t_points)))
         # removing all very small values because of float operation
         theta_array[np.abs(theta_array) < 1e-7] = 0
 
@@ -135,7 +135,7 @@ class ShapeContext(object):
             for j in xrange(t_points):
                 if (fz[i, j]):
                     sn[r_array_q[i, j] - 1, theta_array_q[i, j] - 1] += 1
-            descriptor[i] = sn.reshape(nbins)
+            descriptor[i] = sn.flatten()
 
         return descriptor
 
