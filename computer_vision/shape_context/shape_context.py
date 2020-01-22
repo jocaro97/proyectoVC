@@ -83,8 +83,8 @@ class ShapeContext(object):
         if qlength:
             d = qlength
         C = np.zeros((p, p2))
-        for i in xrange(p):
-            for j in xrange(p2):
+        for i in range(p):
+            for j in range(p2):
                 C[i, j] = self._cost(Q[j] / d, P[i] / p)
 
         return C
@@ -109,14 +109,14 @@ class ShapeContext(object):
         # logspace = [0.1250, 0.2500, 0.5000, 1.0000, 2.0000]
         # 0    1.3 -> 1 0 -> 2 0 -> 3 0 -> 4 0 -> 5 1
         # 0.43  0     0 1    0 2    1 3    2 4    3 5
-        for m in xrange(self.nbins_r):
+        for m in range(self.nbins_r):
             r_array_q += (r_array_n < r_bin_edges[m])
 
         fz = r_array_q > 0
 
         # getting angles in radians
         theta_array = cdist(points, points, lambda u, v: math.atan2((v[1] - u[1]), (v[0] - u[0])))
-        norm_angle = theta_array[max_points[0], max_points[1]]
+        #norm_angle = theta_array[max_points[0], max_points[1]]
         # making angles matrix rotation invariant
         # theta_array = (theta_array - norm_angle * (np.ones((t_points, t_points)) - np.identity(t_points)))
         # removing all very small values because of float operation
@@ -130,9 +130,9 @@ class ShapeContext(object):
         # building point descriptor based on angle and distance
         nbins = self.nbins_theta * self.nbins_r
         descriptor = np.zeros((t_points, nbins))
-        for i in xrange(t_points):
+        for i in range(t_points):
             sn = np.zeros((self.nbins_r, self.nbins_theta))
-            for j in xrange(t_points):
+            for j in range(t_points):
                 if (fz[i, j]):
                     sn[r_array_q[i, j] - 1, theta_array_q[i, j] - 1] += 1
             descriptor[i] = sn.flatten()
@@ -230,7 +230,7 @@ class ShapeContext(object):
         test_move()
         test_scale()
         test_rotation()
-        print 'Tests PASSED'
+        print("Tests PASSED")
 
 
 #ShapeContext.tests()

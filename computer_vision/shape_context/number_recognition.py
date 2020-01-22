@@ -66,4 +66,4 @@ for r in recognize:
 img = cv2.imread('../resources/sc/numbers_test3.png')
 plt.imshow(img)
 plt.show()
-print res
+print(res)
