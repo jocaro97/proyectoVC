@@ -220,6 +220,8 @@ La principal idea del este algoritmo se basa construir un histograma basado en p
 
 Este descriptor se utiliza para reconocer contornos, principalmente carácteres. La idea se basa en que entre dos formas que representen la misma imagen, la posición relativa de los puntos del contorno será parecida. Por esto, para cada creamos un <<mapa>> alrededor suya, y contamos el número de puntos en cada una de las regiones. Esto lo almacenamos en un histograma, que será el descriptor de dicho punto. Las contenedores los creamos uniformente respecto de un espacio polar-logarítmico. Esto último hace que el descriptor sea más sensible a las posiciones de los puntos cercanos al de referencia que a los más alejados.
 
+El proyecto está dividido en dos archivos \texttt{shape_context.py} donde se encuentra toda la implementación del algoritmo 
+
 \newpage
 
 \section{Implementación}
