@@ -53,8 +53,8 @@ def parse_nums(sc, path):
         #print(len(points))
         for p in points:
             aux = cv2.circle(aux, (p[1], p[0]), 0 , 128)
-        plt.imshow(aux)
-        plt.show()
+        #plt.imshow(aux)
+        #plt.show()
         descriptor = sc.compute(points).flatten()
 
         descs.append(descriptor)
@@ -80,24 +80,28 @@ def match(base, current):
     """
       Here we are using cosine diff instead of "by paper" diff, cause it's faster
     """
+    abecedario = ["A", "B", "C", "D", "E", "F", "G", "H","I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
     costes = []
     for b in base:
         costes.append(shape_context_cost(b, current))
 
     char = str(np.argmin(costes))
+    
+    #char = abecedario[np.argmin(costes)]
 
-    if char == '10':
+   if char == '10':
         char = "/"
+
     return char
 
-base_0123456789 = parse_nums(sc, '../resources/sc/base.png')
-recognize = parse_nums(sc, '../resources/sc/telefono.png')
+base_0123456789 = parse_nums(sc, '../resources/sc/ABC.png')
+recognize = parse_nums(sc, '../resources/sc/JOHANNA.png')
 res = ""
 for r in recognize:
     res += match(base_0123456789, r)
 
-base = cv2.imread('../resources/sc/numbers.png')
-img = cv2.imread('../resources/sc/telefono.png')
+base = cv2.imread('../resources/sc/ABC.png')
+img = cv2.imread('../resources/sc/JOHANNA.png')
 plt.imshow(base)
 plt.show()
 plt.imshow(img)
