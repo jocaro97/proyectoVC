@@ -223,7 +223,8 @@ Añadir información de que su utiliza principalmente para reconomiento de simbo
 \newpage
 
 \section{Implementación}
-Para implementar este algoritmo, se ha declarado una clase \verb|ShapeContext|. En el constructor declaramos los parámetros que determinan las regiones en las que se dividiremos la imagen. Es decir, el radio del circulo interior (\verb|r_inner|), el radio del último circulo exterior (\verb|r_outer|), el número de círculos concentricos (\verb|nbins_r|) y el número de regiones en las que se divide los círculos (\verb|nbins_theta|).
+Para implementar este algoritmo, se ha declarado una clase \verb|ShapeContext|. En el constructor declaramos los parámetros que determinan las regiones en las que se dividiremos la imagen. Es decir, el radio del circulo interior (\verb|r_inner|), el radio del último circulo exterior (\verb|r_outer|), el número de círculos concentricos (\verb|nbins_r|) y el número de regiones en las que se divide los círculos (\verb|nbins_theta|). Utilizamos los parámetros sugeridos en TODO.
+%TODO Añadir referencias
 
 \begin{verbatim}
     self.nbins_r = 5
@@ -232,7 +233,8 @@ Para implementar este algoritmo, se ha declarado una clase \verb|ShapeContext|. 
     self.r_outer = 2.0
 \end{verbatim}
 
-En primer lugar se obtenemos los puntos del borde de la imagen que posteriormente le pasaremos al algoritmo para crear los histogramas, para ello definimos la función \verb|canny_edge_shape(self, img, max_samples=100, t1=100, t2=200)|. En esta función obtenemos los puntos del contorno utilizando la función de \textit{OpenCV} \verb|Canny| nos quedamos con 100 puntos aleatoriamente.
+En primer lugar obtenemos los puntos del borde de la imagen que posteriormente le pasaremos al algoritmo para crear los histogramas. Para ello definimos la función \texttt{canny\_edge\_shape(self, img, max\_samples=100, t1=100, t2=200)}, que utiliza la implementación de \textit{OpenCV} del detector de bordes de \textit{Canny}, y devuelve hasta un máximo de 100 puntos distribuidos aleatorimente en el contorno.
+
 \begin{verbatim}
 edges = cv2.Canny(img, t1, t2)
     x, y = np.where(edges != 0)
@@ -244,9 +246,10 @@ edges = cv2.Canny(img, t1, t2)
         shape.append([x[i], y[i]])
     return shape
 \end{verbatim}
-A continuación para construir los descriptores implementamos la función \verb|compute(self, points)|. Esta función será la encargada de recibir los puntos extraídos con la función anterior y construir un descriptor por cada punto.
+
+A continuación, para construir los descriptores implementamos la función \texttt{compute(self, points)}. Esta será la encargada de recibir los puntos extraídos con la función anterior y construir un descriptor para cada uno.
 \begin{enumerate}
-\item En primer lugar calculamos la distancia entre los puntos y los normalizamos por la media.
+\item En primer lugar calculamos la distancia entre todos los puntos dos a dos y la normalizamos por la media.
 
 \begin{verbatim}
     t_points = len(points)
@@ -254,7 +257,7 @@ A continuación para construir los descriptores implementamos la función \verb|
     r_array_n = r_array / r_array.mean()
 \end{verbatim}
 
-\item En segundo lugar creamos los registros y contamos el número de puntos que se encuentran encerrados en cada contenedor. Para ello creamos una matriz de 0 cuadrada de longitud el número de puntos, que usaremos como contador para saber en que regiones se encuentra. En cada iteración comprobamos que los puntos sean menores que el el radio del círculo de la región que estamos testeando, si es menor, aumentamos el contador en uno.
+\item En segundo lugar creamos los registros y contamos el número de puntos que se encuentran encerrados en cada contenedor. Para ello creamos una matriz nula cuadrada de tamaño el número de puntos, que usaremos como contador para saber en que regiones se encuentra. En cada iteración comprobamos que los puntos sean menores que el el radio del círculo de la región que estamos testeando, si es menor, aumentamos el contador en uno.
 
 Por ejemplo si nos encontramos en un espacio logaritmo con los siguientes intervalos.
 logspace $= [\decimalpoint 0.1250, 0.2500, 0.5000, 1.0000, 2.0000]$ y tenemos la siguiente matriz de puntos:
@@ -291,7 +294,7 @@ for m in xrange(self.nbins_r):
     r_array_q += (r_array_n < r_bin_edges[m])
 \end{verbatim}
 
-\item A continuación calculamos el ángulo entre los puntos y lo transformamos en un ángulo entre 0 y $2\pi$.
+\item A continuación calculamos el ángulo entre los puntos, eliminamos posibles errores de redondeo y lo transformamos en un ángulo entre 0 y $2\pi$.
 \begin{verbatim}
 theta_array = cdist(points, points,
                 lambda u, v:
@@ -305,7 +308,7 @@ theta_array_q =
     (1 + np.floor(theta_array_2/(2*math.pi/self.nbins_theta)))
     .astype(int)
 \end{verbatim}
-\item Por último, al igual que con las distancias, fabricamos un contador para almacenar en que contenedor se encuentra el punto. Por último guardamos toda la información en un vector unidimensional.
+\item Por último, al igual que con las distancias, fabricamos un contador para almacenar en que contenedor se encuentra el punto y almacenamos toda la información en un vector unidimensional, que será el descriptor asociado a dicho punto.
 \begin{verbatim}
 # building point descriptor based on angle and distance
 nbins = self.nbins_theta * self.nbins_r
@@ -319,15 +322,24 @@ for i in range(t_points):
 \end{verbatim}
 \end{enumerate}
 
-Una vez que tenemos un vector de descriptores por cada imagen, en la que cada fila se corresponde con un descriptor de cada punto, pasamos a establecer las conexiones entre dos imágenes. Para ello implementamos la función \verb|cost(self, P, Q)| a la cual se le pasan los descriptores de cada imagen, calcula la matriz de costes y devuelve el coste mínimo, para esto último se utiliza el algoritmo de \textit{hungarian}, que explicaremos más adelante.
-\begin{verbatim}
-def cost(self, P, Q):
-      C = self._cost_matrix(P,Q)
-      cost, _= self._hungarian(C)
+El siguiente paso es establecer el coste de relacionar dos puntos, y como cada \textit{shape context} es en realidad una distribución representada como un histograma, es natural usar el test estadístico $\chi^2$
+\[
+C_{ij} = C(p_i,q_j) = \frac{1}{2} \sum_{k=1}^K \frac{[h_i(k) - h_j(k)]^2}{h_i(k) + h_j(k)},
+\]
+donde $h_i(k)$ y $h_j(k)$ son el valor del histograma asociado al k-ésimo contenedor de los punto $i$ y $j$ respectivamente. Este cálculo lo realiza la función \texttt{\_hist\_cost}:
 
-      return cost
+\begin{verbatim}
+def _hist_cost(self, hi, hj):
+      cost = 0
+      for k in range(self.nbins_theta * self.nbins_r):
+          if (hi[k] + hj[k]):
+              cost += ((hi[k] - hj[k])**2) / (hi[k] + hj[k])
+
+      return cost * 0.5
 \end{verbatim}
-La matriz de costes se calcula en la función \verb|_cost_matrix(self, P, Q, qlength=None)|. En ella, colocamos en la casilla $[i,j]$ el coste de ir del punto $i$ (cuyo descriptor esta en la posición de $i$ del primer vector descriptores) al punto $j$ (cuyo descriptor estará en la posición $j$ del segundo vector de descriptores). Además dividimos el coste por el número de puntos, ya que no tiene sentido que este dependa del número de puntos escogidos.
+
+Ahora, dadas los descriptores asociados a todas los puntos de dos \textit{shapes} distintas, almacenamos todos los costes de asociar sus puntos dos a dos en una matriz. Antes de calcular el coste de dos descriptores, normalizamos los histogramas dividiendo por el total de puntos de cada forma respectivamente. Así, trabajamos con el porcentaje de puntos en cada contenedor, solventando el problema de que haya una gran diferencia de puntos en cada figura.
+
 \begin{verbatim}
 def _cost_matrix(self, P, Q, qlength=None):
       p, _ = P.shape
@@ -339,19 +351,9 @@ def _cost_matrix(self, P, Q, qlength=None):
 
       return C
 \end{verbatim}
-El coste de un histograma a otro se calcula con la función \verb|_hist_cost(self, hi, hj)|. Dónde el coste se calcula utilizando un test estadistico de $\chi^2$. El coste de ir de $p_i$ a $q_j$ se calcula de la siguiente forma:
-$$C_{ij} = C(p_i,q_j) = \frac{1}{2} \sum_{k=1}^K \frac{[h_i(k) - h_j(k)]^2}{h_i(k) + h_j(k)} $$
-Donde $h_i(k)$ y $h_j(k)$ son el $K-bin$ normalizado sobre $p_i$ y $q_j$ respectivamente.
-\begin{verbatim}
-def _hist_cost(self, hi, hj):
-      cost = 0
-      for k in range(self.nbins_theta * self.nbins_r):
-          if (hi[k] + hj[k]):
-              cost += ((hi[k] - hj[k])**2) / (hi[k] + hj[k])
 
-      return cost * 0.5
-\end{verbatim}
-Por último, para emparejar los puntos del primer conjunto con el segundo, de forma que la suma de sus costes sea la mínima utilizamos la función \verb| _hungarian(self, cost_matrix)|. Esta función llama a la función de \textit{Python} \verb|linear_sum_assignment| que devuelve dos vectores: uno de ellos correspondiente a los indices de las filas de la matriz y el segundo vector se encuentra en cada posición la columna asignada a esa fila, es decir si en la posición $0$ hay un $3$, significa que la fila 0 la hemos emparejado con la columna 3. Además de devolver la suma total de todos los costes de las parejas formadas también devolvemos los indices emparejados en un vector, utilizando la función \verb|zip|.
+A continuación necesitamos establecer una asignación entre los puntos de ambas formas que minimice la suma de los costes. Esto es un problema de asignación lineal, y para resolverlo utilizamos la implementación del \textit{algoritmo húngaro} disponible en la biblioteca \textit{Scipy}, \texttt{linear\_sum\_assignment}. Esta nos devuelve la asignación como dos vectores de índices, y con estos calculamos la suma de los costes asociados. Todo esto se encuentra implementado en el método \texttt{\_hungarian}, que devuelve el conjunto de indices y valor de la suma de los costes.
+
 \begin{verbatim}
 def _hungarian(self, cost_matrix):
       row_ind, col_ind = linear_sum_assignment(cost_matrix)
@@ -359,6 +361,8 @@ def _hungarian(self, cost_matrix):
       indexes = zip(row_ind.tolist(), col_ind.tolist())
       return total, indexes
 \end{verbatim}
+
+Por último, la función \texttt{cost(self,P,Q)}, toma como argumentos los descriptores de cada imagen, calcula la matriz de costes y devuelve el coste mínimo calculado por el algoritmo húngaro.
 
 Una vez implementado el algoritmo, podemos leer cualquier imagen y compararla con ella. La primera prueba que hemos realizado han sido con números, hemos implementados varias funciones para leer números de una imagen y tras calcular sus descriptores, le podemos pasar otra imagen con números de distinta fuente y comprobar que el algoritmo es capaz de establecer una conexión entre dos número de distinta fuente.
 
@@ -411,8 +415,6 @@ grayd = cv2.cvtColor(img.copy(), cv2.COLOR_GRAY2BGR)
 \end{verbatim}
 
 \end{enumerate}
-
-
 
 %printbibliography
 
