@@ -32,7 +32,8 @@ class ShapeContext(object):
             return ->   total cost of best assignment,
                         best assignment indexes
         """
-        row_ind, col_ind, _ = lapjv(cost_matrix)
+        row_ind = list(range(cost_matrix.shape[0]))
+        col_ind = lapjv(cost_matrix)[1]
         total = cost_matrix[row_ind, col_ind].sum()
         indexes = zip(row_ind.tolist(), col_ind.tolist())
         return total, indexes
