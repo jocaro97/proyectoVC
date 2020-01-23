@@ -18,10 +18,8 @@ class ShapeContext(object):
 
     def _hungarian(self, cost_matrix):
         """
-            Here we are solving task of getting similar points from two paths
-            based on their cost matrixes.
-            This algorithm has dificulty O(n^3)
-            return total modification cost, indexes of matched points
+            return ->   total cost of best assignment,
+                        best assignment indexes
         """
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
         total = cost_matrix[row_ind, col_ind].sum()
@@ -43,47 +41,11 @@ class ShapeContext(object):
             shape.append([x[i], y[i]])
         return shape
 
-    def get_points_from_img(self, image, threshold=50, simpleto=100, radius=2):
-        """
-            That is not very good algorithm of choosing path points, but it will work for our case.
-
-            Idea of it is just to create grid and choose points that on this grid.
-        """
-        if len(image.shape) > 2:
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-        dst = cv2.Canny(image, threshold, threshold * 3, 3)
-
-        py, px = np.gradient(image)
-        # px, py gradients maps shape can be smaller then input image shape
-        points = [index for index, val in np.ndenumerate(dst)
-                  if val == 255 and index[0] < py.shape[0] and index[1] < py.shape[1]]
-        h, w = image.shape
-
-        _radius = radius
-        while len(points) > simpleto:
-            newpoints = points
-            xr = range(0, w, _radius)
-            yr = range(0, h, _radius)
-            for p in points:
-                if p[0] not in yr and p[1] not in xr:
-                    newpoints.remove(p)
-                    if len(points) <= simpleto:
-                        T = np.zeros((simpleto, 1))
-                        for i, (y, x) in enumerate(points):
-                            radians = math.atan2(py[y, x], px[y, x])
-                            T[i] = radians + 2 * math.pi * (radians < 0)
-                        return points, np.asmatrix(T)
-            _radius += 1
-
-        T = np.zeros((simpleto, 1))
-        for i, (y, x) in enumerate(points):
-            radians = math.atan2(py[y, x], px[y, x])
-            T[i] = radians + 2 * math.pi * (radians < 0)
-
-        return points, np.asmatrix(T)
-
     def _hist_cost(self, hi, hj):
+        '''
+            return -> cost of matching points with hi & hj
+                      histograms respectively (chi-square test)
+        '''
         cost = 0
         for k in range(self.nbins_theta * self.nbins_r):
             if (hi[k] + hj[k]):
@@ -91,17 +53,32 @@ class ShapeContext(object):
 
         return cost * 0.5
 
-    def _cost_matrix(self, P, Q, qlength=None):
+    def _cost_matrix(self, P, Q):
+        '''
+            P       ->  Array of histograms associated with one shape
+            Q       ->  Array of histograms associated with another shape
+            return  ->  cost matrix of matching each
+                        histogram in P with each one in Q
+        '''
         p, _ = P.shape
         q, _ = Q.shape
         C = np.zeros((p, q))
         for i in range(p):
             for j in range(q):
+                # Divide every histogram by number of points to
+                # improve accuracy if they have different number of
+                # points
                 C[i, j] = self._hist_cost(P[i]/p, Q[j]/q)
 
         return C
 
     def cost(self, P, Q):
+        '''
+            P       ->  Array of histograms associated with one shape
+            Q       ->  Array of histograms associated with another shape
+            return  ->  cost of matching shape with P histograms
+                        to shape with Q histograms
+        '''
         C = self._cost_matrix(P,Q)
         cost, _= self._hungarian(C)
 
@@ -109,16 +86,11 @@ class ShapeContext(object):
 
     def compute(self, points):
         """
-          Here we are computing shape context descriptor
+            return -> Array with the descriptors of every point
         """
         t_points = len(points)
         # getting euclidian distance
         r_array = cdist(points, points)
-
-        # getting two points with maximum distance to norm angle by them
-        # this is needed for rotation invariant feature
-        # am = r_array.argmax()
-        # max_points = [am / t_points, am % t_points]
 
         # normalizing
         r_array_n = r_array / r_array.mean()
@@ -126,9 +98,6 @@ class ShapeContext(object):
         r_bin_edges = np.logspace(np.log10(self.r_inner), np.log10(self.r_outer), self.nbins_r)
         r_array_q = np.zeros((t_points, t_points), dtype=int)
         # summing occurences in different log space intervals
-        # logspace = [0.1250, 0.2500, 0.5000, 1.0000, 2.0000]
-        # 0    1.3 -> 1 0 -> 2 0 -> 3 0 -> 4 0 -> 5 1
-        # 0.43  0     0 1    0 2    1 3    2 4    3 5
         for m in range(self.nbins_r):
             r_array_q += (r_array_n < r_bin_edges[m])
 
@@ -136,9 +105,6 @@ class ShapeContext(object):
 
         # getting angles in radians
         theta_array = cdist(points, points, lambda u, v: math.atan2((v[1] - u[1]), (v[0] - u[0])))
-        # norm_angle = theta_array[max_points[0], max_points[1]]
-        # making angles matrix rotation invariant
-        # theta_array = (theta_array - norm_angle * (np.ones((t_points, t_points)) - np.identity(t_points)))
         # removing all very small values because of float operation
         theta_array[np.abs(theta_array) < 1e-7] = 0
 
@@ -158,99 +124,3 @@ class ShapeContext(object):
             descriptor[i] = sn.flatten()
 
         return descriptor
-
-    def cosine_diff(self, P, Q):
-        """
-            Fast cosine diff.
-        """
-        P = P.flatten()
-        Q = Q.flatten()
-        assert len(P) == len(Q), 'number of descriptors should be the same'
-        return cosine(P, Q)
-
-    def diff(self, P, Q, qlength=None):
-        """
-            More precise but not very speed efficient diff.
-
-            if Q is generalized shape context then it compute shape match.
-
-            if Q is r point representative shape contexts and qlength set to
-            the number of points in Q then it compute fast shape match.
-
-        """
-        result = None
-
-        C = self.cost_by_paper(P, Q, qlength)
-
-        result = self._hungarian(C)
-
-        return result
-
-    @classmethod
-    def tests(cls):
-        # basics tests to see that all algorithm invariants options are working fine
-        self = cls()
-
-        def test_move():
-            p1 = np.array([
-                [0, 100],
-                [200, 60],
-                [350, 220],
-                [370, 100],
-                [70, 300],
-            ])
-            # +30 by x
-            p2 = np.array([
-                [0, 130],
-                [200, 90],
-                [350, 250],
-                [370, 130],
-                [70, 330]
-            ])
-            c1 = self.compute(p1)
-            c2 = self.compute(p2)
-            assert (np.abs(c1.flatten() - c2.flatten())
-                    ).sum() == 0, "Moving points in 2d space should give same shape context vector"
-
-        def test_scale():
-            p1 = np.array([
-                [0, 100],
-                [200, 60],
-                [350, 220],
-                [370, 100],
-                [70, 300],
-            ])
-            # 2x scaling
-            p2 = np.array([
-                [0, 200],
-                [400, 120],
-                [700, 440],
-                [740, 200],
-                [149, 600]
-            ])
-            c1 = self.compute(p1)
-            c2 = self.compute(p2)
-            assert (np.abs(c1.flatten() - c2.flatten())
-                    ).sum() == 0, "Scaling points in 2d space should give same shape context vector"
-
-        def test_rotation():
-            p1 = np.array(
-                [(144, 196), (220, 216), (330, 208)]
-            )
-            # 90 degree rotation
-            theta = np.radians(90)
-            c, s = np.cos(theta), np.sin(theta)
-            R = np.matrix('{} {}; {} {}'.format(c, -s, s, c))
-            p2 = np.dot(p1, R).tolist()
-
-            c1 = self.compute(p1)
-            c2 = self.compute(p2)
-            assert (np.abs(c1.flatten() - c2.flatten())
-                    ).sum() == 0, "Rotating points in 2d space should give same shape context vector"
-
-        test_move()
-        test_scale()
-        #test_rotation()
-        print("Tests PASSED")
-
-#ShapeContext.tests()
