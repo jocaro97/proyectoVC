@@ -51,11 +51,11 @@ def parse_nums(sc, path):
         #plt.imshow(aux)
         #plt.show()
         #print(len(points))
-        for p in points:
-            aux = cv2.circle(aux, (p[1], p[0]), 0 , 128)
-        plt.imshow(aux)
-        plt.show()
-        descriptor = sc.compute(points).flatten()
+        # for p in points:
+        #     aux = cv2.circle(aux, (p[1], p[0]), 0 , 128)
+        # plt.imshow(aux)
+        # plt.show()
+        descriptor = sc.compute(points)
 
         descs.append(descriptor)
     return np.array(descs)
@@ -79,12 +79,13 @@ def shape_context_cost(h1, h2):
 def match(base, current):
     costes = []
     for b in base:
-        costes.append(shape_context_cost(b, current))
+        costes.append(sc.cost(b, current))
 
     char = str(np.argmin(costes))
 
     if char == '10':
         char = "/"
+
     return char
 
 base_0123456789 = parse_nums(sc, '../resources/sc/base.png')
@@ -93,7 +94,7 @@ res = ""
 for r in recognize:
     res += match(base_0123456789, r)
 
-base = cv2.imread('../resources/sc/numbers.png')
+base = cv2.imread('../resources/sc/base.png')
 img = cv2.imread('../resources/sc/telefono.png')
 plt.imshow(base)
 plt.show()

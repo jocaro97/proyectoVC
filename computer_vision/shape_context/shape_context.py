@@ -16,7 +16,7 @@ class ShapeContext(object):
         self.r_inner = r_inner
         self.r_outer = r_outer
 
-    def hungarian(self, cost_matrix):
+    def _hungarian(self, cost_matrix):
         """
             Here we are solving task of getting similar points from two paths
             based on their cost matrixes.
@@ -28,7 +28,7 @@ class ShapeContext(object):
         indexes = zip(row_ind.tolist(), col_ind.tolist())
         return total, indexes
 
-    def canny_edge_shape(self, img, max_samples=200, t1=100, t2=200):
+    def canny_edge_shape(self, img, max_samples=100, t1=100, t2=200):
         '''
             return -> list of sampled Points from edges
                       founded by canny edge detector.
@@ -83,23 +83,29 @@ class ShapeContext(object):
 
         return points, np.asmatrix(T)
 
-    def cost(self, hi, hj):
+    def _hist_cost(self, hi, hj):
         cost = 0
-        for k in xrange(self.nbins_theta * self.nbins_r):
+        for k in range(self.nbins_theta * self.nbins_r):
             if (hi[k] + hj[k]):
                 cost += ((hi[k] - hj[k])**2) / (hi[k] + hj[k])
 
         return cost * 0.5
 
-    def cost_matrix(self, P, Q, qlength=None):
+    def _cost_matrix(self, P, Q, qlength=None):
         p, _ = P.shape
         q, _ = Q.shape
         C = np.zeros((p, q))
         for i in range(p):
             for j in range(q):
-                C[i, j] = self.cost(P[i]/p, Q[j]/q)
+                C[i, j] = self._hist_cost(P[i]/p, Q[j]/q)
 
         return C
+
+    def cost(self, P, Q):
+        C = self._cost_matrix(P,Q)
+        cost, _= self._hungarian(C)
+
+        return cost
 
     def compute(self, points):
         """
