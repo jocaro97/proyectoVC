@@ -232,18 +232,25 @@ Para implementar este algoritmo, se ha declarado una clase \verb|ShapeContext|. 
     self.r_outer = 2.0
 \end{verbatim}
 
-El esqueleto del algoritmo se encuentra en la funcion \verb|compute(self, points)|.
+En primer lugar se obtenemos los puntos del borde de la imagen que posteriormente le pasaremos al algoritmo para crear los histogramas, para ello definimos la función \verb|canny_edge_shape(self, img, max_samples=100, t1=100, t2=200)|. En esta función obtenemos los puntos del contorno utilizando la función de \textit{OpenCV} \verb|Canny| nos quedamos con 100 puntos aleatoriamente.
+\begin{verbatim}
+edges = cv2.Canny(img, t1, t2)
+    x, y = np.where(edges != 0)
+    if x.shape[0] > max_samples:
+        idx = np.random.choice(x.shape[0], max_samples, replace=False)
+        x, y = x[idx], y[idx]
+    shape = []
+    for i in range(x.shape[0]):
+        shape.append([x[i], y[i]])
+    return shape
+\end{verbatim}
+A continuación para construir los descriptores implementamos la función \verb|compute(self, points)|. Esta función será la encargada de recibir los puntos extraídos con la función anterior y construir un descriptor por cada punto.
 \begin{enumerate}
-\item En primer lugar calculamos la distancia entre los puntos y los normalizamos por la media, además obtenemos los dos puntos con distancia máxima.
+\item En primer lugar calculamos la distancia entre los puntos y los normalizamos por la media.
 
 \begin{verbatim}
     t_points = len(points)
     r_array = cdist(points, points)
-
-    # Needed for rotation invariant
-    # am = r_array.argmax()
-    # max_points = [am / t_points, am % t_points]
-
     r_array_n = r_array / r_array.mean()
 \end{verbatim}
 
@@ -298,7 +305,7 @@ theta_array_q =
     (1 + np.floor(theta_array_2/(2*math.pi/self.nbins_theta)))
     .astype(int)
 \end{verbatim}
-\item Al igual que con las distancias, fabricamos un contador para almacenar en que contenedor se encuentra el punto. Por último guardamos toda la información en un vector unidimensional.
+\item Por último, al igual que con las distancias, fabricamos un contador para almacenar en que contenedor se encuentra el punto. Por último guardamos toda la información en un vector unidimensional.
 \begin{verbatim}
 # building point descriptor based on angle and distance
 nbins = self.nbins_theta * self.nbins_r
@@ -311,6 +318,101 @@ for i in range(t_points):
     descriptor[i] = sn.flatten()
 \end{verbatim}
 \end{enumerate}
+
+Una vez que tenemos un vector de descriptores por cada imagen, en la que cada fila se corresponde con un descriptor de cada punto, pasamos a establecer las conexiones entre dos imágenes. Para ello implementamos la función \verb|cost(self, P, Q)| a la cual se le pasan los descriptores de cada imagen, calcula la matriz de costes y devuelve el coste mínimo, para esto último se utiliza el algoritmo de \textit{hungarian}, que explicaremos más adelante.
+\begin{verbatim}
+def cost(self, P, Q):
+      C = self._cost_matrix(P,Q)
+      cost, _= self._hungarian(C)
+
+      return cost
+\end{verbatim}
+La matriz de costes se calcula en la función \verb|_cost_matrix(self, P, Q, qlength=None)|. En ella, colocamos en la casilla $[i,j]$ el coste de ir del punto $i$ (cuyo descriptor esta en la posición de $i$ del primer vector descriptores) al punto $j$ (cuyo descriptor estará en la posición $j$ del segundo vector de descriptores). Además dividimos el coste por el número de puntos, ya que no tiene sentido que este dependa del número de puntos escogidos.
+\begin{verbatim}
+def _cost_matrix(self, P, Q, qlength=None):
+      p, _ = P.shape
+      q, _ = Q.shape
+      C = np.zeros((p, q))
+      for i in range(p):
+          for j in range(q):
+              C[i, j] = self._hist_cost(P[i]/p, Q[j]/q)
+
+      return C
+\end{verbatim}
+El coste de un histograma a otro se calcula con la función \verb|_hist_cost(self, hi, hj)|. Dónde el coste se calcula utilizando un test estadistico de $\chi^2$. El coste de ir de $p_i$ a $q_j$ se calcula de la siguiente forma:
+$$C_{ij} = C(p_i,q_j) = \frac{1}{2} \sum_{k=1}^K \frac{[h_i(k) - h_j(k)]^2}{h_i(k) + h_j(k)} $$
+Donde $h_i(k)$ y $h_j(k)$ son el $K-bin$ normalizado sobre $p_i$ y $q_j$ respectivamente.
+\begin{verbatim}
+def _hist_cost(self, hi, hj):
+      cost = 0
+      for k in range(self.nbins_theta * self.nbins_r):
+          if (hi[k] + hj[k]):
+              cost += ((hi[k] - hj[k])**2) / (hi[k] + hj[k])
+
+      return cost * 0.5
+\end{verbatim}
+Por último, para emparejar los puntos del primer conjunto con el segundo, de forma que la suma de sus costes sea la mínima utilizamos la función \verb| _hungarian(self, cost_matrix)|. Esta función llama a la función de \textit{Python} \verb|linear_sum_assignment| que devuelve dos vectores: uno de ellos correspondiente a los indices de las filas de la matriz y el segundo vector se encuentra en cada posición la columna asignada a esa fila, es decir si en la posición $0$ hay un $3$, significa que la fila 0 la hemos emparejado con la columna 3. Además de devolver la suma total de todos los costes de las parejas formadas también devolvemos los indices emparejados en un vector, utilizando la función \verb|zip|.
+\begin{verbatim}
+def _hungarian(self, cost_matrix):
+      row_ind, col_ind = linear_sum_assignment(cost_matrix)
+      total = cost_matrix[row_ind, col_ind].sum()
+      indexes = zip(row_ind.tolist(), col_ind.tolist())
+      return total, indexes
+\end{verbatim}
+
+Una vez implementado el algoritmo, podemos leer cualquier imagen y compararla con ella. La primera prueba que hemos realizado han sido con números, hemos implementados varias funciones para leer números de una imagen y tras calcular sus descriptores, le podemos pasar otra imagen con números de distinta fuente y comprobar que el algoritmo es capaz de establecer una conexión entre dos número de distinta fuente.
+
+Para leer varios número de una misma imagen, hemos implementado la función \verb|parse_nums(sc, path)|, a la que se le pasa un objeto de la clase \verb|ShapeContext| y una ruta donde se encuentra la imagen. Esta función devuelve un vector de con los descriptores de cada punto.
+\begin{enumerate}
+
+\item En primer lugar, leemos la imagen, invertimos el color y ensanchamos los bordes, ya que los número que le pasamos a la imagen a veces son muy finos.
+
+\begin{verbatim}
+  img = cv2.imread(path, 0)
+  img = cv2.bitwise_not(img)
+  _, img = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)
+  kernel = np.ones((2, 2), np.uint8)
+  img = cv2.dilate(img, kernel, iterations=1)
+\end{verbatim}
+
+\item En segundo lugar, separamos los número uno a uno, para esto se define la función \verb|get_contour_bounding_rectangles(gray)| que devuelve un vector de tuplas de tamaño 4, una tupla por cada número de la imágen, donde cada una de las entradas de la tuplas se corresponde con las esquinas de un cuadrado que encierra el número.
+
+\begin{verbatim}
+  rois = get_contour_bounding_rectangles(img)
+\end{verbatim}
+
+\begin{center}
+\includegraphics[height=4cm]{./img/numeros}
+\end{center}
+
+\item Creamos una lista de imágenes, en la que cada imagen solo aparezca una cifra, ya que ya sabemos las 4 esquinas de cada número. La imágenes las guardamos con el color original.
+
+\begin{verbatim}
+grayd = cv2.cvtColor(img.copy(), cv2.COLOR_GRAY2BGR)
+  nums = []
+  for r in rois:
+      grayd = cv2.rectangle(grayd, (r[0], r[1]), (r[2], r[3]),
+                                                (0, 255, 0), 1)
+      nums.append((r[0], r[1], r[2], r[3]))
+\end{verbatim}
+
+\item A continuación por cada cifra calculamos el descriptor. Llamando primero a la función \verb|canny_edge_shape| que obtiene los puntos y posteriormente se le pasalos puntos a la función \verb|compute| para construir el descriptor correspondiente a los puntos de esa cifra. Antes de calcular los descriptores.
+
+\begin{verbatim}
+  nums = sorted(nums, key=lambda x: x[0])
+  descs = []
+  for i, r in enumerate(nums):
+      if img[r[1]:r[3], r[0]:r[2]].mean() < 50:
+          continue
+      points = sc.canny_edge_shape(img[r[1]:r[3], r[0]:r[2]])
+      descriptor = sc.compute(points)
+
+      descs.append(descriptor)
+\end{verbatim}
+
+\end{enumerate}
+
+
 
 %printbibliography
 
