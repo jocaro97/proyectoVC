@@ -116,10 +116,12 @@ class ShapeContext(object):
         t_points = len(points)
         # getting euclidian distance
         r_array = cdist(points, points)
+
         # getting two points with maximum distance to norm angle by them
         # this is needed for rotation invariant feature
-        am = r_array.argmax()
-        max_points = [am / t_points, am % t_points]
+        # am = r_array.argmax()
+        # max_points = [am / t_points, am % t_points]
+
         # normalizing
         r_array_n = r_array / r_array.mean()
         # create log space
