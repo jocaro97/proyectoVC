@@ -101,6 +101,9 @@ img = cv2.imread('./img/JOHANNA.png')
 res = ""
 for r in recognize:
     res += match(base_abecedario, r, False)
+abc = cv2.imread('./img/ABC.png')
+plt.imshow(abc)
+plt.show()
 plt.imshow(img)
 plt.show()
 print(res)
