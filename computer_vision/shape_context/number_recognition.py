@@ -57,25 +57,29 @@ def parse(sc, path):
     return np.array(descs)
 
 def match(base, current):
+
+    abecedario = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
     costes = []
     for b in base:
         costes.append(sc.cost(b, current))
 
     char = str(np.argmin(costes))
 
-    if char == '10':
+    #char = abecedario[np.argmin(costes)]
+
+   if char == '10':
         char = "/"
 
     return char
 
-base_0123456789 = parse(sc, '../resources/sc/base.png')
-recognize = parse(sc, '../resources/sc/telefono.png')
+base_0123456789 = parse(sc, '../resources/sc/ABC.png')
+recognize = parse(sc, '../resources/sc/JOHANNA.png')
 res = ""
 for r in recognize:
     res += match(base_0123456789, r)
 
-base = cv2.imread('../resources/sc/base.png')
-img = cv2.imread('../resources/sc/telefono.png')
+base = cv2.imread('../resources/sc/ABC.png')
+img = cv2.imread('../resources/sc/JOHANNA.png')
 plt.imshow(base)
 plt.show()
 plt.imshow(img)

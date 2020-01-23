@@ -124,3 +124,63 @@ class ShapeContext(object):
             descriptor[i] = sn.flatten()
 
         return descriptor
+
+def plot(img, img2, rotate=False):
+    sc = ShapeContext()
+    sampls = 100
+
+    points1 = sc.canny_edge_shape(img)
+    points2 = sc.canny_edge_shape(img2)
+    points2 = (np.array(points2)+30).tolist()
+
+    if rotate:
+        # https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_imgproc/py_geometric_transformations/py_geometric_transformations.html
+        theta = np.radians(90)
+        c, s = np.cos(theta), np.sin(theta)
+        R = np.matrix('{} {}; {} {}'.format(c, -s, s, c))
+        points2 = np.dot(np.array(points2), R).tolist()
+
+    P = sc.compute(points1)
+    print(P[0])
+    x1 = [p[1] for p in points1]
+    y1 = [p[0] for p in points1]
+    Q = sc.compute(points2)
+    x2 = [p[1] for p in points2]
+    y2 = [p[0] for p in points2]
+
+    standard_cost,indexes = sc.diff(P,Q)
+
+    lines = []
+    for p,q in indexes:
+        lines.append(((points1[p][1],points1[p][0]), (points2[q][1],points2[q][0])))
+
+    ax = plt.subplot(121)
+    plt.gca().invert_yaxis()
+    plt.plot(x1,y1,'go', x2,y2, 'ro')
+
+    ax = plt.subplot(122)
+    plt.gca().invert_yaxis()
+    plt.plot(x1,y1,'go',x2,y2,'ro')
+    for p1,p2 in lines:
+        plt.gca().invert_yaxis()
+        plt.plot((p1[0],p2[0]),(p1[1],p2[1]), 'k-')
+    plt.show()
+    print ("Cosine diff:")
+    print(cosine(P.flatten(), Q.flatten()))
+    print("Standard diff:")
+    print(standard_cost)
+
+#ShapeContext.tests()
+#img = cv2.imread('../resources/sc/A.png', 0)
+#img2 = cv2.imread('../resources/sc/AM.png', 0)
+#plt.subplot(121)
+#plt.imshow(img)
+#plt.subplot(122)
+#plt.imshow(img2)
+#plt.show()
+#plot(img, img2)
+
+#img = cv2.imread('../resources/sc/A.png', 0)
+#img2 = cv2.imread('../resources/sc/AM.png', 0)
+# with 90 degree rotation
+#plot(img, img2, rotate=True)
