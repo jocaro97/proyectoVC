@@ -428,9 +428,11 @@ grayd = cv2.cvtColor(img.copy(), cv2.COLOR_GRAY2BGR)
 \end{enumerate}
 Por último para establecer las correspondencias entre caracteres se utiliza la función \verb|match(base, current)|
 
-\newpage
-
 \section{Análisis de resultados}
+
+\subsection{Cifras}%
+\label{sub:cifras}
+
 En primer lugar probamos el algoritmo pasandole como base todos los números (del 0 al 9) y como prueba introducimos una serie de números aleatorios con distintas fuentes.
 
 \begin{figure}[H]
@@ -468,14 +470,17 @@ Como resultado obtenemos:
 Probamos con números escritos a mano:
 \begin{figure}[H]
 \centering
-\includegraphics[width=8cm]{./img/9}
-\caption{Números 9 escrito a mano}
+\includegraphics[width=3cm]{./img/9}
+\caption{Número 9 escrito a mano}
 \end{figure}
 \begin{figure}[H]
 \centering
-\includegraphics[width=8cm]{./img/res9}
+\includegraphics[width=15cm]{./img/res9}
 \caption{Resultado del número anterior comparado con los números base.}
 \end{figure}
+
+\subsection{Letras}%
+\label{sub:letras}
 
 A continuación vamos a realizar pruebas con letras en vez de números, para ello utilizaremos un abecedario y posteriormente introduciremos palabras para comprobar como de bien las reconoce.
 
