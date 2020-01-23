@@ -21,6 +21,7 @@ def get_contour_bounding_rectangles(gray):
 
 def parse_nums(sc, path):
     img = cv2.imread(path, 0)
+
     # invert image colors
     img = cv2.bitwise_not(img)
     _, img = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)
@@ -34,6 +35,8 @@ def parse_nums(sc, path):
     nums = []
     for r in rois:
         grayd = cv2.rectangle(grayd, (r[0], r[1]), (r[2], r[3]), (0, 255, 0), 1)
+        #plt.imshow(grayd)
+        #plt.show()
         nums.append((r[0], r[1], r[2], r[3]))
     # we are getting contours in different order so we need to sort them by x1
     nums = sorted(nums, key=lambda x: x[0])
@@ -41,29 +44,62 @@ def parse_nums(sc, path):
     for i, r in enumerate(nums):
         if img[r[1]:r[3], r[0]:r[2]].mean() < 50:
             continue
-        points, _ = sc.get_points_from_img(img[r[1]:r[3], r[0]:r[2]], 50, 15)
+        points = sc.canny_edge_shape(img[r[1]:r[3], r[0]:r[2]])
+        #points, _ = sc.get_points_from_img(img[r[1]:r[3], r[0]:r[2]], 50, 15)
+
+        aux = img[r[1]:r[3], r[0]:r[2]]
+        #plt.imshow(aux)
+        #plt.show()
+        #print(len(points))
+        for p in points:
+            aux = cv2.circle(aux, (p[1], p[0]), 0 , 128)
+        plt.imshow(aux)
+        plt.show()
         descriptor = sc.compute(points).flatten()
+
         descs.append(descriptor)
     return np.array(descs)
+
+def shape_context_cost(nh1, nh2):
+            '''
+                nh1, nh2 -> normalized histogram
+                return cost of shape context of
+                two given shape context of the shape.
+            '''
+            cost = 0
+            if nh1.shape[0] > nh2.shape[0]:
+                nh1, nh2 = nh2, nh1
+            nh1 = np.hstack([nh1, np.zeros(nh2.shape[0] - nh1.shape[0])])
+            for k in range(nh1.shape[0]):
+                if nh1[k] + nh2[k] == 0:
+                    continue
+                cost += (nh1[k] - nh2[k])**2 / (nh1[k] + nh2[k])
+            return cost / 2.0
 
 def match(base, current):
     """
       Here we are using cosine diff instead of "by paper" diff, cause it's faster
     """
+    costes = []
+    for b in base:
+        costes.append(shape_context_cost(b, current))
 
-    res = cdist(base, current.reshape((1, current.shape[0])), metric="cosine")
-    char = str(np.argmin(res.reshape(11)))
+    char = str(np.argmin(costes))
+
     if char == '10':
         char = "/"
     return char
 
-base_0123456789 = parse_nums(sc, '../resources/sc/numbers.png')
-recognize = parse_nums(sc, '../resources/sc/numbers_test3.png')
+base_0123456789 = parse_nums(sc, '../resources/sc/base.png')
+recognize = parse_nums(sc, '../resources/sc/telefono.png')
 res = ""
 for r in recognize:
     res += match(base_0123456789, r)
 
-img = cv2.imread('../resources/sc/numbers_test3.png')
+base = cv2.imread('../resources/sc/numbers.png')
+img = cv2.imread('../resources/sc/telefono.png')
+plt.imshow(base)
+plt.show()
 plt.imshow(img)
 plt.show()
 print(res)
