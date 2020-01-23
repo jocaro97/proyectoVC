@@ -8,9 +8,10 @@ import matplotlib.pyplot as plt
 sc = ShapeContext()
 
 def get_contour_bounding_rectangles(gray):
-    """
-      Getting all 2nd level bouding boxes based on contour detection algorithm.
-    """
+    '''
+        return ->   Getting all 2nd level bouding boxes based on
+                    contour detection algorithm.
+    '''
     cnts, aux = cv2.findContours(gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     res = []
     for cnt in cnts:
@@ -19,25 +20,28 @@ def get_contour_bounding_rectangles(gray):
 
     return res
 
-def parse_nums(sc, path):
+def parse(sc, path):
+    '''
+        return ->   Return an array of array of descriptors of every shape
+                    found in the img referred by path
+    '''
     img = cv2.imread(path, 0)
 
     # invert image colors
     img = cv2.bitwise_not(img)
     _, img = cv2.threshold(img, 254, 255, cv2.THRESH_BINARY)
-    # making numbers fat for better contour detectiion
+    # making shapes fat for better contour detection
     kernel = np.ones((2, 2), np.uint8)
     img = cv2.dilate(img, kernel, iterations=1)
 
-    # getting our numbers one by one
+    # getting our shapes one by one
     rois = get_contour_bounding_rectangles(img)
     grayd = cv2.cvtColor(img.copy(), cv2.COLOR_GRAY2BGR)
     nums = []
     for r in rois:
         grayd = cv2.rectangle(grayd, (r[0], r[1]), (r[2], r[3]), (0, 255, 0), 1)
-        #plt.imshow(grayd)
-        #plt.show()
         nums.append((r[0], r[1], r[2], r[3]))
+
     # we are getting contours in different order so we need to sort them by x1
     nums = sorted(nums, key=lambda x: x[0])
     descs = []
@@ -45,40 +49,16 @@ def parse_nums(sc, path):
         if img[r[1]:r[3], r[0]:r[2]].mean() < 50:
             continue
         points = sc.canny_edge_shape(img[r[1]:r[3], r[0]:r[2]])
-        #points, _ = sc.get_points_from_img(img[r[1]:r[3], r[0]:r[2]], 50, 15)
 
         aux = img[r[1]:r[3], r[0]:r[2]]
-        #plt.imshow(aux)
-        #plt.show()
-        #print(len(points))
-        # for p in points:
-        #     aux = cv2.circle(aux, (p[1], p[0]), 0 , 128)
-        # plt.imshow(aux)
-        # plt.show()
         descriptor = sc.compute(points)
 
         descs.append(descriptor)
     return np.array(descs)
 
-def shape_context_cost(h1, h2):
-            '''
-                h1, h2 -> histogram
-                return cost of shape context of
-                two given shape context of the shape.
-            '''
-            cost = 0
-            if nh1.shape[0] > nh2.shape[0]:
-                nh1, nh2 = nh2, nh1
-            nh1 = np.hstack([nh1, np.zeros(nh2.shape[0] - nh1.shape[0])])
-            for k in range(nh1.shape[0]):
-                if nh1[k] + nh2[k] == 0:
-                    continue
-                cost += (nh1[k] - nh2[k])**2 / (nh1[k] + nh2[k])
-            return cost / 2.0
-
 def match(base, current):
 
-    abecedario = ["A", "B", "C", "D", "E", "F", "G", "H","I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
+    abecedario = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
     costes = []
     for b in base:
         costes.append(sc.cost(b, current))
@@ -92,8 +72,8 @@ def match(base, current):
 
     return char
 
-base_0123456789 = parse_nums(sc, '../resources/sc/ABC.png')
-recognize = parse_nums(sc, '../resources/sc/JOHANNA.png')
+base_0123456789 = parse(sc, '../resources/sc/ABC.png')
+recognize = parse(sc, '../resources/sc/JOHANNA.png')
 res = ""
 for r in recognize:
     res += match(base_0123456789, r)
