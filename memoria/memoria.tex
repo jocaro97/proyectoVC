@@ -220,7 +220,12 @@ La principal idea del este algoritmo se basa construir un histograma basado en p
 
 Este descriptor se utiliza para reconocer contornos, principalmente carácteres. La idea se basa en que entre dos formas que representen la misma imagen, la posición relativa de los puntos del contorno será parecida. Por esto, para cada creamos un <<mapa>> alrededor suya, y contamos el número de puntos en cada una de las regiones. Esto lo almacenamos en un histograma, que será el descriptor de dicho punto. Las contenedores los creamos uniformente respecto de un espacio polar-logarítmico. Esto último hace que el descriptor sea más sensible a las posiciones de los puntos cercanos al de referencia que a los más alejados.
 
-El proyecto está dividido en dos archivos \texttt{shape_context.py} donde se encuentra toda la implementación del algoritmo 
+El proyecto está dividido en dos archivos \texttt{shape\_context.py} donde se encuentra toda la implementación del algoritmo y el archivo \texttt{test.py} donde se encuentran las funciones utilizadas para leer la imágenes de ejemplos y mostrar los resultados. Para mostrar los ejemplos
+se debe ejecutar:
+
+\begin{texttt}
+> python3 test.py
+\end{texttt}
 
 \newpage
 
@@ -453,7 +458,7 @@ Como resultado obtenemos la salida:
 \caption{Resultado de ejecutar el algoritmo con las dos imágenes anteriores.}
 \end{figure}
 
-Vemos que el único número que no ha detectado el bien es
+Vemos que el único número que no ha detectado el bien es último. Esto se debe a que la forma de elegir los puntos del contorno no es determinista por lo que las primeras tres veces que ha leído el número 9 los puntos que se han elegido han descrito mejor la forma que en el último número 9 leído.
 
 Utilizando la misma base que el ejemplo anterior, probamos otros números con otra fuente.
 \begin{figure}[H]
@@ -478,8 +483,11 @@ Probamos con números escritos a mano:
 \begin{figure}[H]
 \centering
 \includegraphics[width=15cm]{./img/res9}
-\caption{Resultado del número anterior comparado con los números base.}
+\includegraphics[width=15cm]{./img/res98}
+\caption{Resultados del número anterior comparado con los números base.}
 \end{figure}
+
+Comprobamos que el algoritmo responde bastante bien con números escritos a mano. Si lo ejecutamos varias veces vemos que a veces da como resultado el $9$ y otras veces el $8$ esto es debido a que los puntos del contorno no son elegidos de forma determinista como se comentó anteriormente, sin embargo el resultado mostrado es el número $8$ cuya contorno es parecido al número $9$.
 
 \subsection{Letras}%
 \label{sub:letras}
