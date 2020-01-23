@@ -218,7 +218,7 @@ La principal idea del este algoritmo se basa construir un histograma basado en p
 \includegraphics[height=6cm]{./img/intro}
 \end{center}
 
-Añadir información de que su utiliza principalmente para reconomiento de simbolos etc, y de sobre que lo vamos a probar etc.
+Este descriptor se utiliza para reconocer contornos, principalmente carácteres. La idea se basa en que entre dos formas que representen la misma imagen, la posición relativa de los puntos del contorno será parecida. Por esto, para cada creamos un <<mapa>> alrededor suya, y contamos el número de puntos en cada una de las regiones. Esto lo almacenamos en un histograma, que será el descriptor de dicho punto. Las contenedores los creamos uniformente respecto de un espacio polar-logarítmico. Esto último hace que el descriptor sea más sensible a las posiciones de los puntos cercanos al de referencia que a los más alejados.
 
 \newpage
 
@@ -374,7 +374,7 @@ Por último, la función \texttt{cost(self,P,Q)}, toma como argumentos los descr
 
 Una vez implementado el algoritmo, podemos leer cualquier imagen y compararla con ella. La primera prueba que hemos realizado han sido con números, hemos implementados varias funciones para leer números de una imagen y tras calcular sus descriptores, le podemos pasar otra imagen con números de distinta fuente y comprobar que el algoritmo es capaz de establecer una conexión entre dos número de distinta fuente.
 
-Para leer varios número de una misma imagen, hemos implementado la función \verb|parse_nums(sc, path)|, a la que se le pasa un objeto de la clase \verb|ShapeContext| y una ruta donde se encuentra la imagen. Esta función devuelve un vector de con los descriptores de cada punto.
+Para leer varios número de una misma imagen, hemos implementado la función \verb|parse(sc, path)|, a la que se le pasa un objeto de la clase \verb|ShapeContext| y una ruta donde se encuentra la imagen. Esta función devuelve un vector de con los descriptores de cada punto.
 \begin{enumerate}
 
 \item En primer lugar, leemos la imagen, invertimos el color y ensanchamos los bordes, ya que los número que le pasamos a la imagen a veces son muy finos.
