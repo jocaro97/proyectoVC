@@ -138,7 +138,7 @@ class ShapeContext(object):
 
         # getting angles in radians
         theta_array = cdist(points, points, lambda u, v: math.atan2((v[1] - u[1]), (v[0] - u[0])))
-        #norm_angle = theta_array[max_points[0], max_points[1]]
+        # norm_angle = theta_array[max_points[0], max_points[1]]
         # making angles matrix rotation invariant
         # theta_array = (theta_array - norm_angle * (np.ones((t_points, t_points)) - np.identity(t_points)))
         # removing all very small values because of float operation
