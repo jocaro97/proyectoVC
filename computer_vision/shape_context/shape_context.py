@@ -48,6 +48,21 @@ class ShapeContext(object):
             points = points + [[0, 0]] * (simpleto - len(points))
         return points
 
+    def canny_edge_shape(self, img, max_samples=200, t1=100, t2=200):
+        '''
+            return -> list of sampled Points from edges
+                      founded by canny edge detector.
+        '''
+        edges = cv2.Canny(img, t1, t2)
+        x, y = np.where(edges != 0)
+        if x.shape[0] > max_samples:
+            idx = np.random.choice(x.shape[0], max_samples, replace=False)
+            x, y = x[idx], y[idx]
+        shape = []
+        for i in range(x.shape[0]):
+            shape.append([x[i], y[i]])
+        return shape
+
     def get_points_from_img(self, image, threshold=50, simpleto=100, radius=2):
         """
             That is not very good algorithm of choosing path points, but it will work for our case.
@@ -181,6 +196,7 @@ class ShapeContext(object):
 
         """
         result = None
+
         C = self.cost_by_paper(P, Q, qlength)
 
         result = self._hungarian(C)
@@ -251,7 +267,7 @@ class ShapeContext(object):
 
         test_move()
         test_scale()
-        test_rotation()
+        #test_rotation()
         print("Tests PASSED")
 
 #ShapeContext.tests()
