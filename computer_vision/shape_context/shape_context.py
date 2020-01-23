@@ -91,7 +91,7 @@ class ShapeContext(object):
                         to shape with Q histograms
         '''
         C = self._cost_matrix(P,Q)
-        cost, _= self._hungarian(C)
+        cost, _= self._lapjv(C)
 
         return cost
 
