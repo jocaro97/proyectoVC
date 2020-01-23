@@ -381,9 +381,11 @@ Para leer varios número de una misma imagen, hemos implementado la función \ve
   rois = get_contour_bounding_rectangles(img)
 \end{verbatim}
 
-\begin{center}
+\begin{figure}[H]
+\centering
 \includegraphics[height=4cm]{./img/numeros}
-\end{center}
+\caption{Ejemplo de como recuadra la función una imagen con números.}
+\end{figure}
 
 \item Creamos una lista de imágenes, en la que cada imagen solo aparezca una cifra, ya que ya sabemos las 4 esquinas de cada número. La imágenes las guardamos con el color original.
 
@@ -396,7 +398,7 @@ grayd = cv2.cvtColor(img.copy(), cv2.COLOR_GRAY2BGR)
       nums.append((r[0], r[1], r[2], r[3]))
 \end{verbatim}
 
-\item A continuación por cada cifra calculamos el descriptor. Llamando primero a la función \verb|canny_edge_shape| que obtiene los puntos y posteriormente se le pasalos puntos a la función \verb|compute| para construir el descriptor correspondiente a los puntos de esa cifra. Antes de calcular los descriptores.
+\item A continuación por cada carácter calculamos el descriptor. Llamando primero a la función \verb|canny_edge_shape| que obtiene los puntos y posteriormente se le pasalos puntos a la función \verb|compute| para construir el descriptor correspondiente a los puntos de ese carácter. Antes de calcular los descriptores, ordenamos las imágenes que corresponden a cada carácter por su esquina superior izquierda, así el primer descriptor corresponderá con el primer carácter que aparezca.
 
 \begin{verbatim}
   nums = sorted(nums, key=lambda x: x[0])
@@ -408,11 +410,107 @@ grayd = cv2.cvtColor(img.copy(), cv2.COLOR_GRAY2BGR)
       descriptor = sc.compute(points)
 
       descs.append(descriptor)
+  return np.array(descs)
 \end{verbatim}
 
 \end{enumerate}
+Por último para establecer las correspondencias entre caracteres se utiliza la función \verb|match(base, current)|
 
+\newpage
 
+\section{Análisis de resultados}
+En primer lugar probamos el algoritmo pasandole como base todos los números (del 0 al 9) y como prueba introducimos una serie de números aleatorios con distintas fuentes.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=8cm]{./img/base}
+\caption{Números utilizados como base}
+\includegraphics[width=8cm]{./img/telefono}
+\caption{Números de otra fuente distinta a la fuente de los números base}
+\end{figure}
+
+Como resultado obtenemos la salida:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=15cm]{./img/restelefono}
+\caption{Resultado de ejecutar el algoritmo con las dos imágenes anteriores.}
+\end{figure}
+
+Vemos que el único número que no ha detectado el bien es
+
+Utilizando la misma base que el ejemplo anterior, probamos otros números con otra fuente.
+\begin{figure}[H]
+\centering
+\includegraphics[width=8cm]{./img/otrafuente}
+\caption{Números de otra fuente distinta a la fuente de los números base}
+\end{figure}
+Como resultado obtenemos:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=15cm]{./img/resotra}
+\caption{Resultado de ejecutar el algoritmo con la imagen anterior y la imagen base.}
+\end{figure}
+
+Probamos con números escritos a mano:
+\begin{figure}[H]
+\centering
+\includegraphics[width=8cm]{./img/9}
+\caption{Números 9 escrito a mano}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[width=8cm]{./img/res9}
+\caption{Resultado del número anterior comparado con los números base.}
+\end{figure}
+
+A continuación vamos a realizar pruebas con letras en vez de números, para ello utilizaremos un abecedario y posteriormente introduciremos palabras para comprobar como de bien las reconoce.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=15cm]{./img/ABC}
+\caption{Alfabeto utilizado como base}
+\includegraphics[width=8cm]{./img/JOHANNA}
+\caption{Palabra utilizada para comprobar la eficiencia del algoritmo con letras.}
+\end{figure}
+
+El resultado es el siguiente:
+\begin{figure}[H]
+\centering
+\includegraphics[width=15cm]{./img/resjohanna}
+\caption{Resultado de ejecutar el algoritmo con la imagen anterior y la imagen base.}
+\end{figure}
+
+Probamos con otras palabras con otro tipo de fuente:
+\begin{figure}[H]
+\centering
+\includegraphics[width=8cm]{./img/GUILLERMO}
+\caption{Resultado de ejecutar el algoritmo con la imagen anterior y la imagen base.}
+\end{figure}
+
+Como resultado obtenemos:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=15cm]{./img/resguillermo}
+\caption{Resultado de ejecutar el algoritmo con la imagen anterior y la imagen base.}
+\end{figure}
+
+Hacemos más pruebas con otras letras más deformadas, por ejemplo:
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=4cm]{./img/AM}
+\caption{Letra A deformada.}
+\end{figure}
+
+Y obtenemos el resultado correcto:
+\begin{figure}[H]
+\centering
+\includegraphics[width=15cm]{./img/resa}
+\caption{Resultado de ejecutar el algoritmo con la imagen anterior y la imagen base.}
+\end{figure}
 
 %printbibliography
 
