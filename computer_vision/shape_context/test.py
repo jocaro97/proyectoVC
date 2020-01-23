@@ -40,6 +40,7 @@ def parse(sc, path):
     nums = []
     for r in rois:
         grayd = cv2.rectangle(grayd, (r[0], r[1]), (r[2], r[3]), (0, 255, 0), 1)
+
         nums.append((r[0], r[1], r[2], r[3]))
 
     # we are getting contours in different order so we need to sort them by x1
@@ -56,32 +57,59 @@ def parse(sc, path):
         descs.append(descriptor)
     return np.array(descs)
 
-def match(base, current):
+def match(base, current, esnumero):
 
     abecedario = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
     costes = []
     for b in base:
         costes.append(sc.cost(b, current))
 
-    #char = str(np.argmin(costes))
-
-    char = abecedario[np.argmin(costes)]
-
-    #if char == '10':
-    #    char = "/"
+    if esnumero:
+        char = str(np.argmin(costes))
+    else:
+        char = abecedario[np.argmin(costes)]
 
     return char
 
-base_0123456789 = parse(sc, '../resources/sc/ABC.png')
-recognize = parse(sc, '../resources/sc/AM.png')
+base_0123456789 = parse(sc, '../resources/sc/base.png')
+recognize = parse(sc, '../resources/sc/telefono.png')
+
 res = ""
 for r in recognize:
-    res += match(base_0123456789, r)
+    res += match(base_0123456789, r, True)
 
-base = cv2.imread('../resources/sc/ABC.png')
-img = cv2.imread('../resources/sc/AM.png')
+base = cv2.imread('../resources/sc/base.png')
+img = cv2.imread('../resources/sc/telefono.png')
 plt.imshow(base)
 plt.show()
+plt.imshow(img)
+plt.show()
+print(res)
+
+recognize = parse(sc, '../resources/sc/9.png')
+img = cv2.imread('../resources/sc/9.png')
+res = ""
+for r in recognize:
+    res += match(base_0123456789, r, True)
+plt.imshow(img)
+plt.show()
+print(res)
+
+base_abecedario = parse(sc, '../resources/sc/ABC.png')
+recognize = parse(sc, '../resources/sc/JOHANNA.png')
+img = cv2.imread('../resources/sc/JOHANNA.png')
+res = ""
+for r in recognize:
+    res += match(base_abecedario, r, False)
+plt.imshow(img)
+plt.show()
+print(res)
+
+recognize = parse(sc, '../resources/sc/AM.png')
+img = cv2.imread('../resources/sc/AM.png')
+res = ""
+for r in recognize:
+    res += match(base_abecedario, r, False)
 plt.imshow(img)
 plt.show()
 print(res)
