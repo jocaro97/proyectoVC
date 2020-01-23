@@ -51,18 +51,18 @@ def parse_nums(sc, path):
         #plt.imshow(aux)
         #plt.show()
         #print(len(points))
-        for p in points:
-            aux = cv2.circle(aux, (p[1], p[0]), 0 , 128)
-        #plt.imshow(aux)
-        #plt.show()
-        descriptor = sc.compute(points).flatten()
+        # for p in points:
+        #     aux = cv2.circle(aux, (p[1], p[0]), 0 , 128)
+        # plt.imshow(aux)
+        # plt.show()
+        descriptor = sc.compute(points)
 
         descs.append(descriptor)
     return np.array(descs)
 
-def shape_context_cost(nh1, nh2):
+def shape_context_cost(h1, h2):
             '''
-                nh1, nh2 -> normalized histogram
+                h1, h2 -> histogram
                 return cost of shape context of
                 two given shape context of the shape.
             '''
@@ -77,16 +77,14 @@ def shape_context_cost(nh1, nh2):
             return cost / 2.0
 
 def match(base, current):
-    """
-      Here we are using cosine diff instead of "by paper" diff, cause it's faster
-    """
+
     abecedario = ["A", "B", "C", "D", "E", "F", "G", "H","I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
     costes = []
     for b in base:
-        costes.append(shape_context_cost(b, current))
+        costes.append(sc.cost(b, current))
 
     char = str(np.argmin(costes))
-    
+
     #char = abecedario[np.argmin(costes)]
 
    if char == '10':
