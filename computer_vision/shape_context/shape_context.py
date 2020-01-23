@@ -16,7 +16,7 @@ class ShapeContext(object):
         self.r_inner = r_inner
         self.r_outer = r_outer
 
-    def _hungarian(self, cost_matrix):
+    def hungarian(self, cost_matrix):
         """
             Here we are solving task of getting similar points from two paths
             based on their cost matrixes.
@@ -27,26 +27,6 @@ class ShapeContext(object):
         total = cost_matrix[row_ind, col_ind].sum()
         indexes = zip(row_ind.tolist(), col_ind.tolist())
         return total, indexes
-
-    def get_points_from_img_faster(self, image, simpleto=100):
-        """
-            This is much faster version of getting shape points algo.
-            It's based on cv2.findContours algorithm, which is basically return shape points
-            ordered by curve direction. So it's gives better and faster result
-        """
-        if len(image.shape) > 2:
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-        cnts = cv2.findContours(image, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
-        points = np.array(cnts[1][0]).reshape((-1, 2))
-        if len(cnts[1]) > 1:
-            points = np.concatenate([points, np.array(cnts[1][1]).reshape((-1, 2))], axis=0)
-        points = points.tolist()
-        step = len(points) / simpleto
-        points = [points[i] for i in xrange(0, len(points), step)][:simpleto]
-        if len(points) < simpleto:
-            points = points + [[0, 0]] * (simpleto - len(points))
-        return points
 
     def canny_edge_shape(self, img, max_samples=200, t1=100, t2=200):
         '''
@@ -103,7 +83,7 @@ class ShapeContext(object):
 
         return points, np.asmatrix(T)
 
-    def _cost(self, hi, hj):
+    def cost(self, hi, hj):
         cost = 0
         for k in xrange(self.nbins_theta * self.nbins_r):
             if (hi[k] + hj[k]):
@@ -111,16 +91,13 @@ class ShapeContext(object):
 
         return cost * 0.5
 
-    def cost_by_paper(self, P, Q, qlength=None):
+    def cost_matrix(self, P, Q, qlength=None):
         p, _ = P.shape
-        p2, _ = Q.shape
-        d = p2
-        if qlength:
-            d = qlength
-        C = np.zeros((p, p2))
+        q, _ = Q.shape
+        C = np.zeros((p, q))
         for i in range(p):
-            for j in range(p2):
-                C[i, j] = self._cost(Q[j] / d, P[i] / p)
+            for j in range(q):
+                C[i, j] = self.cost(P[i]/p, Q[j]/q)
 
         return C
 

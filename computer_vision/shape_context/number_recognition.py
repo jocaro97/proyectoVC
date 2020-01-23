@@ -60,9 +60,9 @@ def parse_nums(sc, path):
         descs.append(descriptor)
     return np.array(descs)
 
-def shape_context_cost(nh1, nh2):
+def shape_context_cost(h1, h2):
             '''
-                nh1, nh2 -> normalized histogram
+                h1, h2 -> histogram
                 return cost of shape context of
                 two given shape context of the shape.
             '''
@@ -77,9 +77,6 @@ def shape_context_cost(nh1, nh2):
             return cost / 2.0
 
 def match(base, current):
-    """
-      Here we are using cosine diff instead of "by paper" diff, cause it's faster
-    """
     costes = []
     for b in base:
         costes.append(shape_context_cost(b, current))
