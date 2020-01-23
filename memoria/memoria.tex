@@ -223,8 +223,7 @@ Añadir información de que su utiliza principalmente para reconomiento de simbo
 \newpage
 
 \section{Implementación}
-Para implementar este algoritmo, se ha declarado una clase \verb|ShapeContext|. En el constructor declaramos los parámetros que determinan las regiones en las que se dividiremos la imagen. Es decir, el radio del circulo interior (\verb|r_inner|), el radio del último circulo exterior (\verb|r_outer|), el número de círculos concentricos (\verb|nbins_r|) y el número de regiones en las que se divide los círculos (\verb|nbins_theta|). Utilizamos los parámetros sugeridos en TODO.
-%TODO Añadir referencias
+Para implementar este algoritmo, se ha declarado una clase \verb|ShapeContext|. En el constructor declaramos los parámetros que determinan las regiones en las que se dividiremos la imagen. Es decir, el radio del circulo interior (\verb|r_inner|), el radio del último circulo exterior (\verb|r_outer|), el número de círculos concentricos (\verb|nbins_r|) y el número de regiones en las que se divide los círculos (\verb|nbins_theta|). Utilizamos los parámetros sugeridos en el paper original.
 
 \begin{verbatim}
     self.nbins_r = 5
@@ -247,9 +246,12 @@ edges = cv2.Canny(img, t1, t2)
     return shape
 \end{verbatim}
 
+\subsection{Implementación del descriptor}%
+\label{sub:implementación_del_descriptor}
+
 A continuación, para construir los descriptores implementamos la función \texttt{compute(self, points)}. Esta será la encargada de recibir los puntos extraídos con la función anterior y construir un descriptor para cada uno.
 \begin{enumerate}
-\item En primer lugar calculamos la distancia entre todos los puntos dos a dos y la normalizamos por la media.
+\item Primero calculamos la distancia entre todos los puntos dos a dos y la normalizamos por la media.
 
 \begin{verbatim}
     t_points = len(points)
@@ -322,6 +324,9 @@ for i in range(t_points):
 \end{verbatim}
 \end{enumerate}
 
+\subsection{Asignación de relaciones}%
+\label{sub:asignación_de_relaciones}
+
 El siguiente paso es establecer el coste de relacionar dos puntos, y como cada \textit{shape context} es en realidad una distribución representada como un histograma, es natural usar el test estadístico $\chi^2$
 \[
 C_{ij} = C(p_i,q_j) = \frac{1}{2} \sum_{k=1}^K \frac{[h_i(k) - h_j(k)]^2}{h_i(k) + h_j(k)},
@@ -363,6 +368,9 @@ def _hungarian(self, cost_matrix):
 \end{verbatim}
 
 Por último, la función \texttt{cost(self,P,Q)}, toma como argumentos los descriptores de cada imagen, calcula la matriz de costes y devuelve el coste mínimo calculado por el algoritmo húngaro.
+
+\subsection{Uso del descriptor}%
+\label{sub:uso_del_descriptor}
 
 Una vez implementado el algoritmo, podemos leer cualquier imagen y compararla con ella. La primera prueba que hemos realizado han sido con números, hemos implementados varias funciones para leer números de una imagen y tras calcular sus descriptores, le podemos pasar otra imagen con números de distinta fuente y comprobar que el algoritmo es capaz de establecer una conexión entre dos número de distinta fuente.
 
