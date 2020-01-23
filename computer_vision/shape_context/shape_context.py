@@ -3,6 +3,7 @@ import cv2
 import math
 from scipy.spatial.distance import cdist, cosine
 from scipy.optimize import linear_sum_assignment
+from lapjv import lapjv
 import matplotlib.pyplot as plt
 
 class ShapeContext(object):
@@ -22,6 +23,16 @@ class ShapeContext(object):
                         best assignment indexes
         """
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
+        total = cost_matrix[row_ind, col_ind].sum()
+        indexes = zip(row_ind.tolist(), col_ind.tolist())
+        return total, indexes
+
+    def _lapjv(self, cost_matrix):
+        """
+            return ->   total cost of best assignment,
+                        best assignment indexes
+        """
+        row_ind, col_ind, _ = lapjv(cost_matrix)
         total = cost_matrix[row_ind, col_ind].sum()
         indexes = zip(row_ind.tolist(), col_ind.tolist())
         return total, indexes
